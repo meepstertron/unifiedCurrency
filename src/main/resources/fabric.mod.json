@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "unifiedcurrency",
+  "version": "${version}",
+  "name": "unifiedCurrency",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/unifiedcurrency/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-datagen": [
+      "org.hexagonical.unifiedcurrency.client.UnifiedcurrencyDataGenerator"
+    ],
+    "main": [
+      "org.hexagonical.unifiedcurrency.Unifiedcurrency"
+    ]
+  },
+  "mixins": [
+    "unifiedcurrency.mixins.json",
+    {
+      "config": "unifiedcurrency.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
