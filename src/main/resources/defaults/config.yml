@@ -1,9 +1,0 @@
-root:
-
-  database_file: "/db.sqlite"
-  allow_player_transactions: true
-  currency:
-    start_balance: 1000
-    symbol: "$"
-    name: "Dollar"
-    decimal_places: 2
