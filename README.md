@@ -50,7 +50,9 @@ root:
     start_balance: 1000
     symbol: "$"
     name: "Dollar"
-    decimal_places: 2```
+    decimal_places: 2
+
+```
 
 ## Contributing
 Pull requests are welcome. Open an issue for major changes.
