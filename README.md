@@ -58,4 +58,4 @@ root:
 Pull requests are welcome. Open an issue for major changes.
 
 ## License
-MIT @ (LICENSE.txt)[LICENSE]
+MIT @ [LICENSE](LICENSE.txt)

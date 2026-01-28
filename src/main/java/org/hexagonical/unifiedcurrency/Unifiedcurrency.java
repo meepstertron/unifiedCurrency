@@ -70,6 +70,9 @@ public class Unifiedcurrency implements ModInitializer {
             logger.severe("Failed to connect to the database: " + e.getMessage());
         }
 
+        logger.info("Creating Tables");
+        
+
 
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
