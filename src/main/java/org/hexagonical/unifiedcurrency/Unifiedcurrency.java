@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 public class Unifiedcurrency implements ModInitializer {
 
-    Logger logger = Logger.getLogger("unifiedcurrency");
+    public static Logger logger = Logger.getLogger("unifiedcurrency");
     public static final String MOD_ID = "unifiedcurrency";
      Path CONFIG_PATH = FabricLoader.getInstance()
             .getConfigDir()
@@ -144,14 +144,22 @@ public class Unifiedcurrency implements ModInitializer {
     }
 
     private void initPlayerOnDB(ServerPlayerEntity player) {
-        String sql = "INSERT OR IGNORE INTO players (uuid, username, currency) VALUES (?, ?, ?)";
+        String playersql = "INSERT OR IGNORE INTO players (uuid, username, currency) VALUES (?, ?, ?)";
+        String transactionsql = "INSERT OR IGNORE INTO transactions (author, recipient, change) VALUES (?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(sql);
+            PreparedStatement stmt = conn.prepareStatement(playersql);
+            PreparedStatement stmt2 = conn.prepareStatement(transactionsql);
 
             stmt.setString(1, player.getUuidAsString());
             stmt.setString(2, player.getName().getString());
             stmt.setString(3, "{'main':" +Config.get("starter_currency")+"}" );
             stmt.executeUpdate();
+
+
+            stmt2.setString(1, "server");
+            stmt2.setString(2, player.getUuidAsString());
+            stmt2.setDouble(3, 100.00);
+            stmt2.executeUpdate();
 
         } catch (SQLException e) {
             logger.severe("Failed to add player to db: " + e);
