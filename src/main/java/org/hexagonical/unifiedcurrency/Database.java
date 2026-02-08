@@ -1,8 +1,12 @@
 package org.hexagonical.unifiedcurrency;
 
+import net.fabricmc.loader.api.FabricLoader;
+
+import java.nio.file.Path;
+
 public class Database {
 
-    Path DATABASE_PATH = FabricLoader.getInstance()
+    static Path DATABASE_PATH = FabricLoader.getInstance()
         .getConfigDir()
         .resolve("database.db");
 

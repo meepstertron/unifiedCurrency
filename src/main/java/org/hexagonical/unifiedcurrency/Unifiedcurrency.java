@@ -4,16 +4,19 @@ import com.mojang.brigadier.arguments.FloatArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
+
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public class Unifiedcurrency implements ModInitializer {
@@ -63,18 +66,50 @@ public class Unifiedcurrency implements ModInitializer {
             }
         }
 
+        logger.info("Creating Tables");
+
         String url = "jdbc:sqlite:" + DATABASE_PATH.toAbsolutePath();
         try {
             Connection conn = DriverManager.getConnection(url);
+            Statement stmt = conn.createStatement();
+
+            stmt.execute("PRAGMA foreign_keys = ON;");
+
+            logger.info("Connected to db");
+
+            String createPlayerTable = """
+                    CREATE TABLE IF NOT EXISTS players (
+                        uuid TEXT PRIMARY KEY,
+                        username TEXT NOT NULL,
+                        currency TEXT DEFAULT '{}',
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """;
+
+            String createTransactionsTable = """
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        author TEXT NOT NULL,
+                        recipient TEXT NOT NULL,
+                        change DOUBLE NOT NULL,
+                        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                        valid BOOLEAN DEFAULT true,
+                        FOREIGN KEY(author) REFERENCES players(uuid),
+                        FOREIGN KEY(recipient) REFERENCES players(uuid)
+                    )
+                    """;
+            stmt.execute(createPlayerTable);
+            stmt.execute(createTransactionsTable);
+
         } catch (Exception e) {
             logger.severe("Failed to connect to the database: " + e.getMessage());
         }
 
-        logger.info("Creating Tables");
+
         
 
 
-
+        logger.info("registering commands");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(
                     CommandManager.literal("uc")
@@ -90,12 +125,37 @@ public class Unifiedcurrency implements ModInitializer {
                                                             .executes(UCCommands::addBalanceCommand))))
 
                                     .then(CommandManager.literal("set")
-                                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())))
+                                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()))
                                                     .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
                                                             .executes(UCCommands::setBalanceCommand)))
             );
         });
+
+        logger.info("registering events");
+
+        ServerPlayerEvents.JOIN.register((this::onPlayerJoin));
+
         logger.info("Unified Currency Mod Initialized :D");
 
     }
+
+    private void onPlayerJoin(ServerPlayerEntity player) {
+        CompletableFuture.runAsync(() -> initPlayerOnDB(player));
+    }
+
+    private void initPlayerOnDB(ServerPlayerEntity player) {
+        String sql = "INSERT OR IGNORE INTO players (uuid, username, currency) VALUES (?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(Database.url)) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+
+            stmt.setString(1, player.getUuidAsString());
+            stmt.setString(2, player.getName().getString());
+            stmt.setString(3, "{'main':" +Config.get("starter_currency")+"}" );
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            logger.severe("Failed to add player to db: " + e);
+        }
+    }
+
 }
