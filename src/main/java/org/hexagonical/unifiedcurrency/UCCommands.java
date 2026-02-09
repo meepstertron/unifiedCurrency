@@ -79,6 +79,7 @@ public class UCCommands {
             stmt.executeUpdate();
 
 
+
         } catch (SQLException e) {
             Unifiedcurrency.logger.severe("Couldnt add balance: " + e);
         }
@@ -90,9 +91,11 @@ public class UCCommands {
         try (Connection conn = DriverManager.getConnection(Database.url)) {
             PreparedStatement stmt = conn.prepareStatement(transactionsql);
 
+            double change = ammount-getBalance(player.id().toString(), false  );
+
             stmt.setString(1, "server");
             stmt.setString(2, player.id().toString());
-            stmt.setDouble(3, ammount);
+            stmt.setDouble(3, change);
             stmt.executeUpdate();
 
 
@@ -101,7 +104,7 @@ public class UCCommands {
         }
     }
 
-    private static double calculateBalance(String uuid) {
+    private static double getBalance(String uuid, Boolean updateCache:false, Boolean useCache:true) {
         String balanceSql = """
                     SELECT
                         COALESCE(SUM(CASE WHEN author = ? THEN -change ELSE 0 END), 0) +
@@ -115,7 +118,27 @@ public class UCCommands {
         try (Connection conn = DriverManager.getConnection(Database.url)) {
             PreparedStatement stmt = conn.prepareStatement(balanceSql);
 
-        return 0f;
+            stmt.setString(1, uuid);
+            stmt.setString(2, uuid);
+            stmt.setString(3, uuid);
+            stmt.setString(4, uuid);
+
+            ResultSet rs = stmt.executeQuery();
+            double balance = rs.next() ? rs.getDouble("balance") : 0.0;
+
+            if (updateCache) {
+                String updatesql = "UPDATE players SET currency = ? WHERE uuid = ?";
+                PreparedStatement stmt1 = conn.prepareStatement(updatesql);
+
+                String newCurrencyJSON = "{\"main\":" +balance+"}";
+
+                stmt1.setString(1, newCurrencyJSON);
+                stmt1.setString(2, uuid);
+                stmt1.executeUpdate();
+
+
+            }
+        return balance;
     } catch (SQLException e) {
             throw new RuntimeException(e);
         }
