@@ -6,6 +6,7 @@ import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.sql.*;
 import java.util.UUID;
@@ -79,10 +80,22 @@ public class UCCommands {
             stmt.executeUpdate();
 
 
-
+            getBalance(player.id().toString(), true, false  );
         } catch (SQLException e) {
             Unifiedcurrency.logger.severe("Couldnt add balance: " + e);
         }
+    }
+
+    public static int reloadCommand(CommandContext<ServerCommandSource> context) {
+        Config.load();
+        context.getSource().sendFeedback(() -> Text.literal("Reloaded!").formatted(Formatting.GREEN), false);
+        return 1;
+    }
+
+    public static int recalculateBalancesCommand(CommandContext<ServerCommandSource> context) {
+
+
+        return 1;
     }
 
     private static void setBalance(PlayerConfigEntry player, Double ammount) throws SQLException {
@@ -91,29 +104,40 @@ public class UCCommands {
         try (Connection conn = DriverManager.getConnection(Database.url)) {
             PreparedStatement stmt = conn.prepareStatement(transactionsql);
 
-            double change = ammount-getBalance(player.id().toString(), false  );
+            double change = ammount-getBalance(player.id().toString(), false, false  );
 
             stmt.setString(1, "server");
             stmt.setString(2, player.id().toString());
             stmt.setDouble(3, change);
             stmt.executeUpdate();
 
-
+            getBalance(player.id().toString(), true, false  );
         } catch (SQLException e) {
             Unifiedcurrency.logger.severe("Couldnt set balance: " + e);
         }
+
+
     }
 
-    private static double getBalance(String uuid, Boolean updateCache:false, Boolean useCache:true) {
-        String balanceSql = """
-                    SELECT
-                        COALESCE(SUM(CASE WHEN author = ? THEN -change ELSE 0 END), 0) +
-                        COALESCE(SUM(CASE WHEN recipient = ? THEN change ELSE 0 END), 0) 
-                    AS balance
-                    FROM transactions
-                    WHERE author = ? OR recipient = ?;
-                """;
 
+    private static void recalcBalances() {
+
+    }
+
+    private static double getBalance(String uuid, Boolean updateCache, Boolean useCache) {
+        String balanceSql;
+        if (!useCache) {
+            balanceSql = """
+                        SELECT
+                            COALESCE(SUM(CASE WHEN author = ? THEN -change ELSE 0 END), 0) +
+                            COALESCE(SUM(CASE WHEN recipient = ? THEN change ELSE 0 END), 0)
+                        AS balance
+                        FROM transactions
+                        WHERE (author = ? OR recipient = ?) AND valid = 1;
+                    """;
+        } else {
+            balanceSql = "SELE";
+        }
 
         try (Connection conn = DriverManager.getConnection(Database.url)) {
             PreparedStatement stmt = conn.prepareStatement(balanceSql);
@@ -126,7 +150,7 @@ public class UCCommands {
             ResultSet rs = stmt.executeQuery();
             double balance = rs.next() ? rs.getDouble("balance") : 0.0;
 
-            if (updateCache) {
+            if (updateCache && !useCache) {
                 String updatesql = "UPDATE players SET currency = ? WHERE uuid = ?";
                 PreparedStatement stmt1 = conn.prepareStatement(updatesql);
 

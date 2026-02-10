@@ -114,20 +114,28 @@ public class Unifiedcurrency implements ModInitializer {
             dispatcher.register(
                     CommandManager.literal("uc")
                             .executes(UCCommands::rootCommand)
+                            .then(CommandManager.literal("reload")
+                                    .executes(UCCommands::reloadCommand))
+                            .then(CommandManager.literal("recalculatebalannces")
+                                    .executes())
                             .then(CommandManager.literal("balance")
                                     .executes(UCCommands::getBalanceCommand)
+
+                                    // get
                                     .then(CommandManager.literal("get")
                                             .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                                     .executes(UCCommands::getOtherBalanceCommand)))
+                                    // add
                                     .then(CommandManager.literal("add")
-                                            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()))
+                                            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                                     .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
                                                             .executes(UCCommands::addBalanceCommand))))
-
+                                    // set
                                     .then(CommandManager.literal("set")
-                                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile()))
-                                                    .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
-                                                            .executes(UCCommands::setBalanceCommand)))
+                                        .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                                                .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
+                                                        .executes(UCCommands::setBalanceCommand)))))
+
             );
         });
 
@@ -140,7 +148,8 @@ public class Unifiedcurrency implements ModInitializer {
     }
 
     private void onPlayerJoin(ServerPlayerEntity player) {
-        CompletableFuture.runAsync(() -> initPlayerOnDB(player));
+        if (Database.isUserInDB(player.getUuidAsString()))
+            CompletableFuture.runAsync(() -> initPlayerOnDB(player));
     }
 
     private void initPlayerOnDB(ServerPlayerEntity player) {

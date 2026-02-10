@@ -23,10 +23,9 @@ The project exposes a Java API and a few administrative commands to manage the c
 ### For Admins
 - `/uc balance` - Get your own balance
 - `/uc balance get <Player>` - Get a player's Balance
-- `/uc balance set <Player>` - Set a player's Balance
-- `/uc balance add <Player>` - Add to a player's Balance
+- `/uc balance set <Player> <amount>` - Set a player's Balance
+- `/uc balance add <Player> <amount>` - Add to a player's Balance
 - `/uc reload` - Reload the Config
-- `/uc freezealltransactions` - Freezes All transactions between players, Changes by other integrations (E-Stop)
 - `/uc recalculatebalances` - Uses Transaction logs to recalculate balances 
 
 ### For Developers

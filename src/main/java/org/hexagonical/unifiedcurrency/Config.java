@@ -33,7 +33,16 @@ public class Config {
     }
 
     public static Object get(String key) {
-        return data != null ? data.get(key) : null;
+        String[] parts = key.split("\\.");
+        Object current = data;
+
+        for (String part : parts) {
+            if (!(current instanceof Map)) return null;
+            current = ((Map<String, Object>) current).get(part);
+            if (current == null) return null;
+        }
+
+        return current;
     }
 
     public static Map<String, Object> getData() {
