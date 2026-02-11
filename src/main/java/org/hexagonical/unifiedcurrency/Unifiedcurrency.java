@@ -117,7 +117,7 @@ public class Unifiedcurrency implements ModInitializer {
                             .then(CommandManager.literal("reload")
                                     .executes(UCCommands::reloadCommand))
                             .then(CommandManager.literal("recalculatebalannces")
-                                    .executes())
+                                    .executes(UCCommands::recalculateBalancesCommand))
                             .then(CommandManager.literal("balance")
                                     .executes(UCCommands::getBalanceCommand)
 
@@ -136,6 +136,10 @@ public class Unifiedcurrency implements ModInitializer {
                                                 .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
                                                         .executes(UCCommands::setBalanceCommand)))))
 
+            );
+            dispatcher.register(CommandManager.literal("pay")
+                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                            .then(CommandManager.argument("amount", FloatArgumentType.floatArg())))
             );
         });
 

@@ -9,6 +9,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -94,6 +96,7 @@ public class UCCommands {
 
     public static int recalculateBalancesCommand(CommandContext<ServerCommandSource> context) {
 
+        CompletableFuture.runAsync(UCCommands::recalcBalances);
 
         return 1;
     }
@@ -121,6 +124,23 @@ public class UCCommands {
 
 
     private static void recalcBalances() {
+        String sql = "SELECT * FROM players";
+        List<String> players = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(Database.url)) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                players.add(uuid);
+            };
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        for (String player : players) {
+            getBalance(player, true, false);
+        }
+
 
     }
 
