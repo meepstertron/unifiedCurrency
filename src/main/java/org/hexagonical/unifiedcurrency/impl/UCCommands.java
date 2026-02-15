@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.PlayerConfigEntry;
 import net.minecraft.server.command.ServerCommandSource;
@@ -13,6 +15,8 @@ import net.minecraft.util.Formatting;
 import org.hexagonical.unifiedcurrency.Unifiedcurrency;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,15 +53,18 @@ public class UCCommands {
 
     // /uc balance get <player> command
     public static int getOtherBalanceCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        float balance = 0.0f; // Placeholder
         PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
         String playerName = player.name();
+
+
+        double balance = getBalance(player.id().toString(), false, true);
+
+
         context.getSource().sendFeedback(() -> Text.literal(playerName + "'s Balance is: " + balance + "$"), false);
         return 1;
     }
 
     public static int addBalanceCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        // Placeholder for add balance logic
         PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
         String playerName = player.name();
         float amount = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "amount");
@@ -75,7 +82,6 @@ public class UCCommands {
     }
 
     public static int setBalanceCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        // Placeholder for set balance logic
         PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
         String playerName = player.name();
         float amount = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "amount");
@@ -131,17 +137,37 @@ public class UCCommands {
             return 0;
         }
         List<Database.Transaction> transactions;
+        int maxTransactions;
         try {
              transactions = getTransactions(player.getUuidAsString(), 10);
+
+            maxTransactions = Database.countTransactions(context.getSource().getPlayer().getUuidAsString());
+
         } catch (SQLException e) {
             return 0;
         }
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        player.sendMessage("");
+        String preMessage = String.format("<gray>╔ Transaction Log for <white><u>%s</u></white> as of <blue>{%s}</blue>",
+                context.getSource().getName(), now.format(formatter));
+
+        String afterMessage = String.format(
+                "<gray>╚ Showing %s/%s Transactions, 10 Per page</gray>",
+                transactions.toArray().length, maxTransactions
+
+        );
+
+        Audience audience = Unifiedcurrency.adventure.audience(player);
+
+        audience.sendMessage(MiniMessage.miniMessage().deserialize(preMessage));
+
+
         for (Database.Transaction tx : transactions) {
-
+            sendTransactionMessage(player, tx);
         }
 
+        audience.sendMessage(MiniMessage.miniMessage().deserialize(afterMessage));
 
         return 1;
     }
@@ -220,18 +246,32 @@ public class UCCommands {
 
     }
 
-    public void sendTransactionMessage(ServerPlayerEntity player, Database.Transaction tx) {
-        String typeColor = tx.isDebit(player.getUuidAsString()) ? "<red>" : "<green>";
-        String typeSign = tx.isDebit(player.getUuidAsString()) ? "-" : "+";
+    public static void sendTransactionMessage(ServerPlayerEntity player, Database.Transaction tx) {
+
+        String typeSign = tx.isDebit(player.getUuidAsString()) ? "<red>-</red>" : "<green>+</green>";
 
         // for strikethru if its invalid
         String startSt = !tx.isValid() ? "<st>" : "";
         String endSt = !tx.isValid() ? "</st>" : "";
 
+        String commandWord = tx.isDebit(player.getUuidAsString()) ? "Sent" : "Recieved";
+        String targetWord = tx.isDebit(player.getUuidAsString())  ? "to" : "from";
+
+        String username = tx.isServer() ? "server" : tx.isDebit(player.getUuidAsString()) ? tx.getRecipientName() : tx.getAuthorName();
+
+        String usernameWord = username.equals("server") ? "<gold>Server</gold>" : "<u>"+username+"</u>";
+
+        String cashWord = "<dark_green>"+tx.getAmount()+"$</dark_green>";
+
+        String invalidFlag = tx.isValid() ? "" : "<red>[INVALID]</red>";
+
         String message = String.format(
-                "<gray>╠ </gray>%s"
+                "<gray>╠ %s[</gray>%s<gray>] {%s}</gray> %s %s %s %s %s %s",
+                startSt, typeSign, tx.getTimestamp(), commandWord,cashWord, targetWord, usernameWord,endSt, invalidFlag
         );
 
+        Audience audience = Unifiedcurrency.adventure.audience(player);
+        audience.sendMessage(MiniMessage.miniMessage().deserialize(message));
     }
 
     private static double getBalance(String uuid, Boolean updateCache, Boolean useCache) {
