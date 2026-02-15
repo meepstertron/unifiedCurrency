@@ -1,6 +1,7 @@
-package org.hexagonical.unifiedcurrency;
+package org.hexagonical.unifiedcurrency.impl;
 
 import net.fabricmc.loader.api.FabricLoader;
+import org.hexagonical.unifiedcurrency.Unifiedcurrency;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;

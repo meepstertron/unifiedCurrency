@@ -10,6 +10,9 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.hexagonical.unifiedcurrency.impl.Config;
+import org.hexagonical.unifiedcurrency.impl.Database;
+import org.hexagonical.unifiedcurrency.impl.UCCommands;
 
 
 import java.io.InputStream;
@@ -97,6 +100,8 @@ public class Unifiedcurrency implements ModInitializer {
                         FOREIGN KEY(author) REFERENCES players(uuid),
                         FOREIGN KEY(recipient) REFERENCES players(uuid)
                     )
+                    CREATE INDEX IF NOT EXISTS idx_sender ON transactions(author);
+                    CREATE INDEX IF NOT EXISTS idx_receiver ON transactions(receiver);
                     """;
             stmt.execute(createPlayerTable);
             stmt.execute(createTransactionsTable);
@@ -135,6 +140,8 @@ public class Unifiedcurrency implements ModInitializer {
                                         .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                                                 .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
                                                         .executes(UCCommands::setBalanceCommand)))))
+                            .then(CommandManager.literal("transactions")
+                                    .executes(UCCommands::reloadCommand))
 
             );
             dispatcher.register(CommandManager.literal("pay")

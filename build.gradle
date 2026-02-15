@@ -45,6 +45,15 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.13.2'
     implementation "org.yaml:snakeyaml:2.2"
     implementation "org.xerial:sqlite-jdbc:3.45.1.0"
+
+    modImplementation("net.kyori:adventure-api:4.26.1")
+    modImplementation("net.kyori:adventure-text-minimessage:4.26.1")
+
+    modImplementation("net.kyori:adventure-platform-fabric:6.8.0")
+
+    include(modImplementation('me.lucko:fabric-permissions-api:0.6.1'))
+
+
 }
 
 processResources {
