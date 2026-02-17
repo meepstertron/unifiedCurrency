@@ -49,10 +49,17 @@ public class UCCommands {
 
     // /uc balance get <player> command
     public static int getOtherBalanceCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        float balance = 0.0f; // Placeholder
+        double balance = 0; // Placeholder
         PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
         String playerName = player.name();
-        context.getSource().sendFeedback(() -> Text.literal(playerName + "'s Balance is: " + balance + "$"), false);
+
+
+        CompletableFuture.runAsync(()-> {
+            balance = getBalance(player.id().toString(), false, true)
+
+
+        });
+
         return 1;
     }
 
