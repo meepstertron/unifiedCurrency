@@ -169,7 +169,7 @@ public class Unifiedcurrency implements ModInitializer {
             dispatcher.register(CommandManager.literal("pay")
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                             .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
-                                    .executes()))
+                                    .executes(UCCommands::payPlayerCommand)))
 
             );
         });

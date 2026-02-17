@@ -172,6 +172,32 @@ public class UCCommands {
         return 1;
     }
 
+    public static int payPlayerCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+
+        ServerPlayerEntity author = context.getSource().getPlayer();
+        if (author == null) {
+            context.getSource().sendError(Text.literal("This command can only be run by a player."));
+            return 0;
+        }
+
+        PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
+        String playerName = player.name();
+        float amount = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "amount");
+
+        CompletableFuture.runAsync(()->{
+           Double authorBalance = getBalance(context.getSource().getPlayer().getUuidAsString(), true, true);
+           if (authorBalance >= amount) {
+               Database.addPlayerTransaction(player.id().toString(), author.getUuidAsString(), (double) amount);
+
+           } else {
+               context.getSource().sendMessage(Text.of("You do not have enough money!"));
+           }
+        });
+
+        return 1;
+
+    }
+
     private static List<Database.Transaction> getTransactions(String uuid, int limit) throws SQLException {
         List<Database.Transaction> transactions = new ArrayList<>();
         String sql = "SELECT * FROM transactions WHERE author = ? OR recipient = ? ORDER BY timestamp DESC LIMIT ?";

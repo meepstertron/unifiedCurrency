@@ -146,6 +146,25 @@ public class Database {
 
         return 0;
     }
+
+    public static void addPlayerTransaction(String recipient, String author, Double amount) {
+        String sql = "INSERT INTO transactions (author, recipient, change) VALUES (?, ?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(Database.url)){
+            PreparedStatement stmt = conn.prepareStatement(sql);
+
+            stmt.setString(1, author);
+            stmt.setString(2, recipient);
+            stmt.setDouble(3, amount);
+
+            stmt.executeQuery();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+
+    }
     
 
     public static final String url = "jdbc:sqlite:" + DATABASE_PATH.toAbsolutePath();
