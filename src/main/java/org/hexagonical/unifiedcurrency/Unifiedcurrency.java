@@ -1,18 +1,23 @@
 package org.hexagonical.unifiedcurrency;
 
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.kyori.adventure.platform.modcommon.MinecraftServerAudiences;
 import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.hexagonical.unifiedcurrency.impl.Config;
 import org.hexagonical.unifiedcurrency.impl.Database;
 import org.hexagonical.unifiedcurrency.impl.UCCommands;
+import org.jetbrains.annotations.NotNull;
 
 
 import java.io.InputStream;
@@ -26,11 +31,24 @@ public class Unifiedcurrency implements ModInitializer {
 
     public static Logger logger = Logger.getLogger("unifiedcurrency");
     public static final String MOD_ID = "unifiedcurrency";
-     Path CONFIG_PATH = FabricLoader.getInstance()
+
+    Path CONFIG_PATH = FabricLoader.getInstance()
             .getConfigDir()
             .resolve(MOD_ID + ".yml");
+    public static MinecraftServerAudiences adventure;
+
     @Override
     public void onInitialize() {
+
+        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+            adventure = MinecraftServerAudiences.of(server);
+        });
+
+        // Clean up when the server stops to prevent memory leaks
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            adventure = null;
+        });
+
 
 
         if (Files.notExists(CONFIG_PATH)) {
@@ -114,15 +132,19 @@ public class Unifiedcurrency implements ModInitializer {
         
 
 
+
         logger.info("registering commands");
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(
                     CommandManager.literal("uc")
                             .executes(UCCommands::rootCommand)
                             .then(CommandManager.literal("reload")
-                                    .executes(UCCommands::reloadCommand))
+                                    .executes(UCCommands::reloadCommand)
+                                    .requires(Permissions.require("unifiedcurrency.command.reload")))
                             .then(CommandManager.literal("recalculatebalannces")
-                                    .executes(UCCommands::recalculateBalancesCommand))
+                                    .executes(UCCommands::recalculateBalancesCommand)
+                                    .requires(Permissions.require("unifiedcurrency.command.recalculatebalances")))
+
                             .then(CommandManager.literal("balance")
                                     .executes(UCCommands::getBalanceCommand)
 
@@ -141,12 +163,14 @@ public class Unifiedcurrency implements ModInitializer {
                                                 .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
                                                         .executes(UCCommands::setBalanceCommand)))))
                             .then(CommandManager.literal("transactions")
-                                    .executes(UCCommands::reloadCommand))
+                                    .executes(UCCommands::getTransactionsCommand))
 
             );
             dispatcher.register(CommandManager.literal("pay")
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
-                            .then(CommandManager.argument("amount", FloatArgumentType.floatArg())))
+                            .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
+                                    .executes(UCCommands::payPlayerCommand)))
+
             );
         });
 
