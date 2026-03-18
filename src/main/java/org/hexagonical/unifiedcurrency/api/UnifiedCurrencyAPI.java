@@ -1,6 +1,13 @@
 package org.hexagonical.unifiedcurrency.api;
 
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.hexagonical.unifiedcurrency.Unifiedcurrency;
+import org.hexagonical.unifiedcurrency.impl.Database;
+import org.hexagonical.unifiedcurrency.impl.UCHelpers;
+
+import java.sql.SQLException;
+import java.util.List;
+
 
 /**
  * Public API for accessing Unified Currency.
@@ -15,9 +22,19 @@ public class UnifiedCurrencyAPI {
      * @return The player's Balance as a double
      */
     public static double getBalance(ServerPlayerEntity player) {
-
-        return 0.0;
+        return UCHelpers.getBalance(player.getUuidAsString(), false, true);
     }
+
+    /**
+     * Calculate a Player's balance from the Transaction log and ignore cache!
+     *
+     * @param player Whose balance should be calculated
+     * @return Player's balance as a double
+     */
+    public static double getCalculatedBalance(ServerPlayerEntity player) {
+        return UCHelpers.getBalance(player.getUuidAsString(), true, false);
+    }
+
 
     /**
      * Add to a player's balance from the "server" account
@@ -25,9 +42,10 @@ public class UnifiedCurrencyAPI {
      *
      * @param player The target Player recieving the currency
      * @param amount Money to add in a float
+     * @exception SQLException When something doesnt go right with the database
      */
-    public static void addBalance(ServerPlayerEntity player, double amount) {
-
+    public static void addBalance(ServerPlayerEntity player, double amount) throws SQLException {
+        UCHelpers.addBalance(player.getPlayerConfigEntry(), amount);
     }
 
     /**
@@ -36,8 +54,8 @@ public class UnifiedCurrencyAPI {
      * @param player The target player's currency being overwritten
      * @param amount How much in a Float
      */
-    public static void setBalance(ServerPlayerEntity player, double amount) {
-
+    public static void setBalance(ServerPlayerEntity player, double amount) throws SQLException {
+        UCHelpers.setBalance(player.getPlayerConfigEntry(), amount);
     }
 
     /**
@@ -50,8 +68,15 @@ public class UnifiedCurrencyAPI {
      * @param amount How much
      * @param check_balance If to check the balance before appending
      */
-    public static void appendPlayerTransaction(ServerPlayerEntity sender, ServerPlayerEntity receiver, double amount, boolean check_balance ) {
+    public static void appendPlayerTransaction(ServerPlayerEntity sender, ServerPlayerEntity receiver, double amount, boolean check_balance ) throws UCHelpers.InsufficientFundsException {
 
+        if (check_balance) {
+            if  (UCHelpers.getBalance(sender.getUuidAsString(), false, false) < amount) {
+                throw new UCHelpers.InsufficientFundsException("Player does not have enough currency");
+            }
+        }
+
+        UCHelpers.addPlayerTransaction(receiver.getUuidAsString(), sender.getUuidAsString(), amount);
     }
 
     /**
@@ -71,14 +96,31 @@ public class UnifiedCurrencyAPI {
      * @param player Player to be recalculated
      */
     public static void recalculatePlayerBalance(ServerPlayerEntity player) {
-
+        UCHelpers.getBalance(player.getUuidAsString(), true, false);
     }
 
     /**
      * DO NOT call this if you want just one player
-     * it is very resource intensive and shouldnt really be used unless most of the playerbase has been modified
+     * it is very resource intensive and shouldn't really be used unless most of the playerbase has been modified
+     * use recalculatePlayerBalance() or getCalculatedBalance() for a singular player.
      */
     public static void recalculateAllPlayers() {
+        UCHelpers.recalcBalances();
+    }
 
+    public static boolean isPlayerInDatabase(ServerPlayerEntity player) {
+
+        return UCHelpers.isUserInDB(player.getUuidAsString());
+    }
+
+    /**
+     * Get a Player's latest Transaction history
+     * @param player
+     * @param limit Limit of how many entries to fetch
+     * @return
+     * @throws SQLException
+     */
+    public static List<Database.Transaction> getTransactions(ServerPlayerEntity player, int limit) throws SQLException {
+        return UCHelpers.getTransactions(player.getUuidAsString(), limit);
     }
 }

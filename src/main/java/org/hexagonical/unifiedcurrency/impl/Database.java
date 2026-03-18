@@ -111,22 +111,7 @@ public class Database {
 
     }
 
-    public static boolean isUserInDB(String uuid) {
-        String sql = "SELECT * FROM players WHERE uuid = ?";
 
-
-        try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(sql);
-
-            stmt.setString(1, uuid);
-
-            ResultSet rs = stmt.executeQuery();
-            return rs.next();
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public static int countTransactions(String uuid) throws SQLException {
         String sql = "SELECT COUNT(*) FROM transactions WHERE author = ? OR recipient = ?";
@@ -147,24 +132,7 @@ public class Database {
         return 0;
     }
 
-    public static void addPlayerTransaction(String recipient, String author, Double amount) {
-        String sql = "INSERT INTO transactions (author, recipient, change) VALUES (?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(Database.url)){
-            PreparedStatement stmt = conn.prepareStatement(sql);
-
-            stmt.setString(1, author);
-            stmt.setString(2, recipient);
-            stmt.setDouble(3, amount);
-
-            stmt.executeQuery();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-
-
-    }
     
 
     public static final String url = "jdbc:sqlite:" + DATABASE_PATH.toAbsolutePath();

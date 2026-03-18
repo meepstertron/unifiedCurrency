@@ -17,6 +17,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.hexagonical.unifiedcurrency.impl.Config;
 import org.hexagonical.unifiedcurrency.impl.Database;
 import org.hexagonical.unifiedcurrency.impl.UCCommands;
+import org.hexagonical.unifiedcurrency.impl.UCHelpers;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -183,7 +184,7 @@ public class Unifiedcurrency implements ModInitializer {
     }
 
     private void onPlayerJoin(ServerPlayerEntity player) {
-        if (Database.isUserInDB(player.getUuidAsString()))
+        if (UCHelpers.isUserInDB(player.getUuidAsString()))
             CompletableFuture.runAsync(() -> initPlayerOnDB(player));
     }
 
