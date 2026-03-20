@@ -1,5 +1,6 @@
 package org.hexagonical.unifiedcurrency.api;
 
+import com.google.errorprone.annotations.DoNotCall;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.hexagonical.unifiedcurrency.Unifiedcurrency;
 import org.hexagonical.unifiedcurrency.impl.Database;
@@ -86,6 +87,8 @@ public class UnifiedCurrencyAPI {
      * @param receiver Player receiving the currency
      * @param amount How much
      */
+    @DoNotCall
+    @Deprecated
     public static void appendServerTransaction(ServerPlayerEntity receiver, double amount ) {
 
     }
