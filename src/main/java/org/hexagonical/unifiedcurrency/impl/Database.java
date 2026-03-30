@@ -133,18 +133,6 @@ public class Database {
     }
 
 
-            stmt.setString(1, author);
-            stmt.setString(2, recipient);
-            stmt.setDouble(3, amount);
-
-            stmt.executeUpdate();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-
-
-    }
     
 
     public static final String url = "jdbc:sqlite:" + DATABASE_PATH.toAbsolutePath();

@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.hexagonical.unifiedcurrency.impl.UCHelpers.*;
@@ -173,16 +174,16 @@ public class UCCommands {
             return 1;
         }
 
-        CompletableFuture.runAsync(()->{
-           Double authorBalance = getBalance(context.getSource().getPlayer().getUuidAsString(), true, true);
-           if (authorBalance >= amount) {
-               UCHelpers.addPlayerTransaction(player.id().toString(), author.getUuidAsString(), (double) amount);
+        ServerCommandSource source = context.getSource();
+
+        String recipientUuid = player.id().toString();
+        String authorUuid = author.getUuidAsString();
 
         CompletableFuture.runAsync(() -> {
             try {
                 double authorBalance = getBalance(authorUuid, true, true);
                 if (authorBalance >= amount) {
-                    Database.addPlayerTransaction(recipientUuid, authorUuid, amount);
+                    addPlayerTransaction(recipientUuid, authorUuid, amount);
                     source.getServer().execute(() ->
                             source.sendFeedback(() -> Text.literal("Sent " + amount + "$ to " + playerName), false)
                     );
@@ -192,7 +193,7 @@ public class UCCommands {
                     );
                 }
             } catch (Exception e) {
-                e.printStackTrace(); // check your server logs
+                e.printStackTrace();
                 source.getServer().execute(() ->
                         source.sendError(Text.literal("Payment failed: " + e.getMessage()))
                 );
@@ -201,18 +202,6 @@ public class UCCommands {
 
         return 1;
     }
-
-
-    private static List<Database.Transaction> getTransactions(String uuid, int limit) throws SQLException {
-        List<Database.Transaction> transactions = new ArrayList<>();
-        String sql = "SELECT * FROM transactions WHERE author = ? OR recipient = ? ORDER BY timestamp DESC LIMIT ?";
-
-        try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(sql);
-
-
-
-
 
 
 
