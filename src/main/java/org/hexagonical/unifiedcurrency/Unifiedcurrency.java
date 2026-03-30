@@ -28,6 +28,8 @@ import java.sql.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
+import static org.hexagonical.unifiedcurrency.impl.UCHelpers.isUserInDB;
+
 public class Unifiedcurrency implements ModInitializer {
 
     public static Logger logger = Logger.getLogger("unifiedcurrency");
@@ -109,21 +111,31 @@ public class Unifiedcurrency implements ModInitializer {
                     """;
 
             String createTransactionsTable = """
-                    CREATE TABLE IF NOT EXISTS transactions (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        author TEXT NOT NULL,
-                        recipient TEXT NOT NULL,
-                        change DOUBLE NOT NULL,
-                        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
-                        valid BOOLEAN DEFAULT true,
-                        FOREIGN KEY(author) REFERENCES players(uuid),
-                        FOREIGN KEY(recipient) REFERENCES players(uuid)
-                    )
-                    CREATE INDEX IF NOT EXISTS idx_sender ON transactions(author);
-                    CREATE INDEX IF NOT EXISTS idx_recipient ON transactions(receiver);
-                    """;
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                author TEXT NOT NULL,
+                recipient TEXT NOT NULL,
+                change DOUBLE NOT NULL,
+                timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                valid BOOLEAN DEFAULT true,
+                FOREIGN KEY(author) REFERENCES players(uuid),
+                FOREIGN KEY(recipient) REFERENCES players(uuid)
+            );
+            """;
+
+            String createSenderIndex = """
+            CREATE INDEX IF NOT EXISTS idx_sender ON transactions(author);
+            """;
+
+            String createRecipientIndex = """
+            CREATE INDEX IF NOT EXISTS idx_recipient ON transactions(recipient);
+            """;
+
             stmt.execute(createPlayerTable);
             stmt.execute(createTransactionsTable);
+            stmt.execute(createSenderIndex);
+            stmt.execute(createRecipientIndex);
+
 
         } catch (Exception e) {
             logger.severe("Failed to connect to the database: " + e.getMessage());
@@ -188,7 +200,7 @@ public class Unifiedcurrency implements ModInitializer {
     }
 
     private void onPlayerJoin(ServerPlayerEntity player) {
-        if (!Database.isUserInDB(player.getUuidAsString()))
+        if (!isUserInDB(player.getUuidAsString()))
             CompletableFuture.runAsync(() -> initPlayerOnDB(player));
     }
 
