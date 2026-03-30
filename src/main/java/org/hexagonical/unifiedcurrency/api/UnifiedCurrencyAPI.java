@@ -80,18 +80,18 @@ public class UnifiedCurrencyAPI {
         UCHelpers.addPlayerTransaction(receiver.getUuidAsString(), sender.getUuidAsString(), amount);
     }
 
-    /**
+    /*
      * Append a Server->Player transaction
      * only used in unique cases use setBalance or addBalance instead.
      *
      * @param receiver Player receiving the currency
      * @param amount How much
      */
-    @DoNotCall
+/*    @DoNotCall
     @Deprecated
     public static void appendServerTransaction(ServerPlayerEntity receiver, double amount ) {
 
-    }
+    }*/
 
     /**
      * Recalculate one player's balance from their transaction history and write it to their cache

@@ -49,7 +49,7 @@ public class UCCommands {
 
         double balance = getBalance(player.getUuidAsString(), false, true);
 
-        context.getSource().sendFeedback(() -> Text.literal("Your Balance is: " + balance + "$"), false);
+        context.getSource().sendFeedback(() -> Text.literal("Your Balance is: " + balance + Config.get("currency_symbol", "$")), false);
         return 1;
     }
 

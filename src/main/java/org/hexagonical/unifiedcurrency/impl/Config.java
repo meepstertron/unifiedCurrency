@@ -33,7 +33,7 @@ public class Config {
         }
     }
 
-    public static Object get(String key) {
+    private static Object getRaw(String key) {
         String[] parts = key.split("\\.");
         Object current = data;
 
@@ -48,5 +48,23 @@ public class Config {
 
     public static Map<String, Object> getData() {
         return data;
+    }
+
+    public static <T> T get(String key, T defaultValue) {
+        Object value = getRaw(key);
+        return value != null ? (T) value : defaultValue;
+    }
+
+    public static Integer getInt(String key) {
+        Object value = getRaw(key);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return null;
+    }
+
+    public static int getInt(String key, int defaultValue) {
+        Integer value = getInt(key);
+        return value != null ? value : defaultValue;
     }
 }
