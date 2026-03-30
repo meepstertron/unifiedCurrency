@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static org.hexagonical.unifiedcurrency.impl.UCHelpers.*;
+
 
 public class UCCommands {
 
@@ -47,7 +49,7 @@ public class UCCommands {
 
         double balance = getBalance(player.getUuidAsString(), false, true);
 
-        context.getSource().sendFeedback(() -> Text.literal("Your Balance is: " + balance + "$"), false);
+        context.getSource().sendFeedback(() -> Text.literal("Your Balance is: " + balance + Config.get("currency_symbol", "$")), false);
         return 1;
     }
 
@@ -97,24 +99,7 @@ public class UCCommands {
 
     }
 
-    private static void addBalance(PlayerConfigEntry player, Double ammount) throws SQLException {
-        String transactionsql = "INSERT INTO transactions (author, recipient, change) VALUES (?, ?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(transactionsql);
-
-            stmt.setString(1, "server");
-            stmt.setString(2, player.id().toString());
-            stmt.setDouble(3, ammount);
-            stmt.executeUpdate();
-
-
-            getBalance(player.id().toString(), true, false  );
-        } catch (SQLException e) {
-            Unifiedcurrency.logger.severe("Couldnt add balance: " + e);
-
-        }
-    }
 
     public static int reloadCommand(CommandContext<ServerCommandSource> context) {
         Config.load();
@@ -124,7 +109,7 @@ public class UCCommands {
 
     public static int recalculateBalancesCommand(CommandContext<ServerCommandSource> context) {
 
-        CompletableFuture.runAsync(UCCommands::recalcBalances);
+        CompletableFuture.runAsync(UCHelpers::recalcBalances);
 
         return 1;
     }
@@ -188,9 +173,10 @@ public class UCCommands {
             return 1;
         }
 
-        ServerCommandSource source = context.getSource();
-        String authorUuid = author.getUuidAsString();
-        String recipientUuid = player.id().toString();
+        CompletableFuture.runAsync(()->{
+           Double authorBalance = getBalance(context.getSource().getPlayer().getUuidAsString(), true, true);
+           if (authorBalance >= amount) {
+               UCHelpers.addPlayerTransaction(player.id().toString(), author.getUuidAsString(), (double) amount);
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -224,72 +210,11 @@ public class UCCommands {
         try (Connection conn = DriverManager.getConnection(Database.url)) {
             PreparedStatement stmt = conn.prepareStatement(sql);
 
-            stmt.setString(1, uuid);
-            stmt.setString(2, uuid);
-            stmt.setInt(3, limit);
-
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                transactions.add(new Database.Transaction(
-                        rs.getInt("id"),
-                        rs.getString("author"),
-                        rs.getString("recipient"),
-                        rs.getDouble("change"),
-                        rs.getString("timestamp"),
-                        rs.getBoolean("valid")
 
 
 
-                ));
-            }
-        }
-
-        return transactions;
-    }
-
-    private static void setBalance(PlayerConfigEntry player, Double ammount) throws SQLException {
-        String transactionsql = "INSERT INTO transactions (author, recipient, change) VALUES (?, ?, ?)";
-
-        try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(transactionsql);
-
-            double change = ammount-getBalance(player.id().toString(), false, false  );
-
-            stmt.setString(1, "server");
-            stmt.setString(2, player.id().toString());
-            stmt.setDouble(3, change);
-            stmt.executeUpdate();
-
-            getBalance(player.id().toString(), true, false  );
-        } catch (SQLException e) {
-            Unifiedcurrency.logger.severe("Couldnt set balance: " + e);
-        }
 
 
-    }
-
-
-    private static void recalcBalances() {
-        String sql = "SELECT * FROM players";
-        List<String> players = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                String uuid = rs.getString("uuid");
-                players.add(uuid);
-            };
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        for (String player : players) {
-            getBalance(player, true, false);
-        }
-
-
-    }
 
     public static void sendTransactionMessage(ServerPlayerEntity player, Database.Transaction tx) {
 
@@ -319,62 +244,7 @@ public class UCCommands {
         audience.sendMessage(MiniMessage.miniMessage().deserialize(message));
     }
 
-    private static double getBalance(String uuid, Boolean updateCache, Boolean useCache) {
-        String balanceSql;
-        if (!useCache) {
-            balanceSql = """
-                        SELECT
-                            COALESCE(SUM(CASE WHEN author = ? THEN -change ELSE 0 END), 0) +
-                            COALESCE(SUM(CASE WHEN recipient = ? THEN change ELSE 0 END), 0)
-                        AS balance
-                        FROM transactions
-                        WHERE (author = ? OR recipient = ?) AND valid = 1;
-                    """;
-        } else {
-            balanceSql = "SELECT currency FROM players WHERE uuid = ?";
-        }
 
-        try (Connection conn = DriverManager.getConnection(Database.url)) {
-            PreparedStatement stmt = conn.prepareStatement(balanceSql);
-
-            stmt.setString(1, uuid);
-            if (!useCache) {
-                stmt.setString(2, uuid);
-                stmt.setString(3, uuid);
-                stmt.setString(4, uuid);
-            }
-            ResultSet rs = stmt.executeQuery();
-            double balance;
-            if (!useCache){
-                balance = rs.next() ? rs.getDouble("balance") : 0.0;
-            } else {
-                if (rs.next()) {
-                    JsonObject obj = gson.fromJson(rs.getString("currency"), JsonObject.class);
-                    System.out.println("Json Object: "+ obj);
-                    balance = obj.get("main").getAsDouble();
-                } else {
-                    balance = 0.0;
-                }
-
-            }
-
-            if (updateCache && !useCache) {
-                String updatesql = "UPDATE players SET currency = ? WHERE uuid = ?";
-                PreparedStatement stmt1 = conn.prepareStatement(updatesql);
-
-                String newCurrencyJSON = "{\"main\":" +balance+"}";
-
-                stmt1.setString(1, newCurrencyJSON);
-                stmt1.setString(2, uuid);
-                stmt1.executeUpdate();
-
-
-            }
-        return balance;
-    } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }
 
 

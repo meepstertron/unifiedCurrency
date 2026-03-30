@@ -17,6 +17,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.hexagonical.unifiedcurrency.impl.Config;
 import org.hexagonical.unifiedcurrency.impl.Database;
 import org.hexagonical.unifiedcurrency.impl.UCCommands;
+import org.hexagonical.unifiedcurrency.impl.UCHelpers;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -200,13 +201,13 @@ public class Unifiedcurrency implements ModInitializer {
 
             stmt.setString(1, player.getUuidAsString());
             stmt.setString(2, player.getName().getString());
-            stmt.setString(3, "{\"main\":" +Config.get("starter_currency")+"}" );
+            stmt.setString(3, "{\"main\":" +Config.get("starter_currency", 100.00)+"}" );
             stmt.executeUpdate();
 
 
             stmt2.setString(1, "server");
             stmt2.setString(2, player.getUuidAsString());
-            stmt2.setDouble(3, 100.00);
+            stmt2.setDouble(3, Config.get("starter_currency", 100.00));
             stmt2.executeUpdate();
 
         } catch (SQLException e) {
