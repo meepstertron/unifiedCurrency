@@ -158,7 +158,6 @@ public class UCCommands {
     }
 
     public static int payPlayerCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-
         ServerPlayerEntity author = context.getSource().getPlayer();
         if (author == null) {
             context.getSource().sendError(Text.literal("This command can only be run by a player."));
@@ -167,22 +166,49 @@ public class UCCommands {
 
         PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
         String playerName = player.name();
-        float amount = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "amount");
+        double amount = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "amount");
+
+        if (amount <= 0) {
+            context.getSource().sendError(Text.literal("Invalid number"));
+            return 1;
+        }
 
         CompletableFuture.runAsync(()->{
            Double authorBalance = getBalance(context.getSource().getPlayer().getUuidAsString(), true, true);
            if (authorBalance >= amount) {
                UCHelpers.addPlayerTransaction(player.id().toString(), author.getUuidAsString(), (double) amount);
 
-           } else {
-               context.getSource().sendMessage(Text.of("You do not have enough money!"));
-           }
+        CompletableFuture.runAsync(() -> {
+            try {
+                double authorBalance = getBalance(authorUuid, true, true);
+                if (authorBalance >= amount) {
+                    Database.addPlayerTransaction(recipientUuid, authorUuid, amount);
+                    source.getServer().execute(() ->
+                            source.sendFeedback(() -> Text.literal("Sent " + amount + "$ to " + playerName), false)
+                    );
+                } else {
+                    source.getServer().execute(() ->
+                            source.sendError(Text.literal("You do not have enough money!"))
+                    );
+                }
+            } catch (Exception e) {
+                e.printStackTrace(); // check your server logs
+                source.getServer().execute(() ->
+                        source.sendError(Text.literal("Payment failed: " + e.getMessage()))
+                );
+            }
         });
 
         return 1;
-
     }
 
+
+    private static List<Database.Transaction> getTransactions(String uuid, int limit) throws SQLException {
+        List<Database.Transaction> transactions = new ArrayList<>();
+        String sql = "SELECT * FROM transactions WHERE author = ? OR recipient = ? ORDER BY timestamp DESC LIMIT ?";
+
+        try (Connection conn = DriverManager.getConnection(Database.url)) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
 
 
 
