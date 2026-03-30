@@ -157,7 +157,7 @@ public class Database {
             stmt.setString(2, recipient);
             stmt.setDouble(3, amount);
 
-            stmt.executeQuery();
+            stmt.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

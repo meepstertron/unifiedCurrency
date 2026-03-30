@@ -119,7 +119,7 @@ public class Unifiedcurrency implements ModInitializer {
                         FOREIGN KEY(recipient) REFERENCES players(uuid)
                     )
                     CREATE INDEX IF NOT EXISTS idx_sender ON transactions(author);
-                    CREATE INDEX IF NOT EXISTS idx_receiver ON transactions(receiver);
+                    CREATE INDEX IF NOT EXISTS idx_recipient ON transactions(receiver);
                     """;
             stmt.execute(createPlayerTable);
             stmt.execute(createTransactionsTable);
@@ -169,8 +169,12 @@ public class Unifiedcurrency implements ModInitializer {
             dispatcher.register(CommandManager.literal("pay")
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                             .then(CommandManager.argument("amount", FloatArgumentType.floatArg())
-                                    .executes(UCCommands::payPlayerCommand)))
+                                    .executes(UCCommands::payPlayerCommand)
+                                    .requires(Permissions.require("unifiedcurrency.command.pay"))))
 
+            );
+            dispatcher.register(CommandManager.literal("balance")
+                    .executes(UCCommands::getBalanceCommand)
             );
         });
 
@@ -183,7 +187,7 @@ public class Unifiedcurrency implements ModInitializer {
     }
 
     private void onPlayerJoin(ServerPlayerEntity player) {
-        if (Database.isUserInDB(player.getUuidAsString()))
+        if (!Database.isUserInDB(player.getUuidAsString()))
             CompletableFuture.runAsync(() -> initPlayerOnDB(player));
     }
 
@@ -196,7 +200,7 @@ public class Unifiedcurrency implements ModInitializer {
 
             stmt.setString(1, player.getUuidAsString());
             stmt.setString(2, player.getName().getString());
-            stmt.setString(3, "{'main':" +Config.get("starter_currency")+"}" );
+            stmt.setString(3, "{\"main\":" +Config.get("starter_currency")+"}" );
             stmt.executeUpdate();
 
 

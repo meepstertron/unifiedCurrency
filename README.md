@@ -34,7 +34,6 @@ Please Refer to the documentation :)
 ### For Players
 - `/balance`
 - `/pay <Player> <Ammount>`
-- `/baltop`
 
 ## Config
 The config is located under `/config/unfiedcurrency/config.yml`
@@ -42,15 +41,9 @@ The config is located under `/config/unfiedcurrency/config.yml`
 This is the default content:
 ```yaml
 root:
-
   database_file: "/db.sqlite"
   allow_player_transactions: true
-  currency:
-    start_balance: 1000
-    symbol: "$"
-    name: "Dollar"
-    decimal_places: 2
-
+  starter_currency: 100
 ```
 
 ## Contributing
