@@ -29,21 +29,20 @@ The project exposes a Java API and a few administrative commands to manage the c
 - `/uc recalculatebalances` - Uses Transaction logs to recalculate balances 
 
 ### For Developers
-Please Refer to the documentation :)
+Please Refer to the javadoc
 
 ### For Players
 - `/balance`
 - `/pay <Player> <Ammount>`
 
 ## Config
-The config is located under `/config/unfiedcurrency/config.yml`
+The config is located under `/config/unfiedcurrency.yml`
 
 This is the default content:
 ```yaml
-root:
-  database_file: "/db.sqlite"
-  allow_player_transactions: true
-  starter_currency: 100
+database_file: "/database.db"
+allow_player_transactions: true
+starter_currency: 100
 ```
 
 ## Contributing

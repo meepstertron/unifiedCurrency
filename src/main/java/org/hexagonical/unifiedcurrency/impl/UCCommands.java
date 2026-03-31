@@ -63,7 +63,7 @@ public class UCCommands {
         double balance = getBalance(player.id().toString(), false, true);
 
 
-        context.getSource().sendFeedback(() -> Text.literal(playerName + "'s Balance is: " + balance + "$"), false);
+        context.getSource().sendFeedback(() -> Text.literal(playerName + "'s Balance is: " + balance + Config.get("currency_symbol", "$")), false);
         return 1;
     }
 
@@ -80,7 +80,7 @@ public class UCCommands {
             }
         });
 
-        context.getSource().sendFeedback(() -> Text.literal("Added " + amount + "$" + " to " + playerName + "'s balance"), false);
+        context.getSource().sendFeedback(() -> Text.literal("Added " + amount + Config.get("currency_symbol","$") + " to " + playerName + "'s balance"), false);
         return 1;
     }
 
@@ -95,7 +95,7 @@ public class UCCommands {
         }
 
 
-        context.getSource().sendFeedback(() -> Text.literal("Set " + playerName + "'s balance to " + amount + "$"), false);
+        context.getSource().sendFeedback(() -> Text.literal("Set " + playerName + "'s balance to " + amount + Config.get("currency_symbol", "$")), false);
         return 1;
 
     }
@@ -165,6 +165,10 @@ public class UCCommands {
             return 0;
         }
 
+        if (Config.get("allow_player_transactions", true)) {
+
+        }
+
         PlayerConfigEntry player = GameProfileArgumentType.getProfileArgument(context, "player").iterator().next();
         String playerName = player.name();
         double amount = com.mojang.brigadier.arguments.FloatArgumentType.getFloat(context, "amount");
@@ -185,7 +189,7 @@ public class UCCommands {
                 if (authorBalance >= amount) {
                     addPlayerTransaction(recipientUuid, authorUuid, amount);
                     source.getServer().execute(() ->
-                            source.sendFeedback(() -> Text.literal("Sent " + amount + "$ to " + playerName), false)
+                            source.sendFeedback(() -> Text.literal("Sent " + amount + Config.get("currency_symbol", "$") +" to " + playerName), false)
                     );
                 } else {
                     source.getServer().execute(() ->
@@ -220,7 +224,7 @@ public class UCCommands {
 
         String usernameWord = username.equals("server") ? "<gold>Server</gold>" : "<u>"+username+"</u>";
 
-        String cashWord = "<dark_green>"+tx.getAmount()+"$</dark_green>";
+        String cashWord = "<dark_green>"+tx.getAmount()+Config.get("currency_symbol", Config.get("currency_symbol", "$"))+"</dark_green>";
 
         String invalidFlag = tx.isValid() ? "" : "<red>[INVALID]</red>";
 

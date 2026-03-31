@@ -1,3 +1,14 @@
+# Unified currency Default config
+# https://github.com
 
+# Set symbol used in messages
 currency_symbol: "$"
+
+# Set a default ammount people get on joining the server
 starter_currency: 100
+
+# change the Database Path (relative to /config)
+database_file: "database.db"
+
+# allow transactions between players
+allow_player_transactions: true

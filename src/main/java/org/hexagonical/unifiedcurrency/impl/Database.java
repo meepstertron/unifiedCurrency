@@ -11,7 +11,7 @@ public class Database {
 
     static Path DATABASE_PATH = FabricLoader.getInstance()
         .getConfigDir()
-        .resolve("database.db");
+        .resolve(Config.get("", "database.db"));
 
     public static class Transaction {
         private final int id;

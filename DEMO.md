@@ -4,8 +4,6 @@ IP: node1.hexagonical.ch`
 
 1.21.11
 
-> Status: *Offline*
+> Status: *Offline* (i couldnt get it working :( )
 
-Java Port: `0117`
-
-Bedrock Port: `10116`
+Java Port: `10120`
