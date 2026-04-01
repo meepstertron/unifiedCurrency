@@ -20,6 +20,7 @@ The project exposes a Java API and a few administrative commands to manage the c
 
 > Warning! The Mod should only be used on a fabric server. (i havent tested it client side)
 
+Once acquired place the .jar in your fabric server's mods folder, i also recommend getting [LuckPerms](https://luckperms.net/) for permissions
 
 ## Usage
 
