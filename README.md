@@ -9,13 +9,16 @@ The project exposes a Java API and a few administrative commands to manage the c
 - Lightweight
 
 ## Installation
-- Grab a JAR from the releases
-- Use the CI/CD artifacts (UNSTABLE)
+- Grab a JAR from the [releases](https://github.com/meepstertron/unifiedCurrency/releases)
+- Use the CI/CD artifacts (Might be Unstable)
+- Comming to Modrinth soon!
 - use gradle locally to build your own:
 
 1. Navigate to the root folder of the project
 2. Run `./gradlew build`
 3. Your JAR is located in /lib
+
+> Warning! The Mod should only be used on a fabric server. (i havent tested it client side)
 
 
 ## Usage
