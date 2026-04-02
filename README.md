@@ -48,6 +48,8 @@ database_file: "/database.db"
 allow_player_transactions: true
 starter_currency: 100
 ```
+## Demo
+Watch me ramble: https://slack-files.com/T09V59WQY1E-F0APN7BEV9V-8ec2a951a6
 
 ## Contributing
 Pull requests are welcome. Open an issue for major changes.
